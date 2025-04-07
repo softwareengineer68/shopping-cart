@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product List</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: #333;
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            position: relative;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 2.5rem;
+        }
+
+        #cart-icon {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 1.5rem;
+            color: white;
+            cursor: pointer;
+        }
+
+        #cart-icon span {
+            background-color: red;
+            border-radius: 50%;
+            padding: 5px 10px;
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            font-size: 1rem;
+            color: white;
+        }
+
+        #product-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 20px;
+            justify-items: center;
+        }
+
+        .product {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            width: 100%;
+            transition: transform 0.2s ease-in-out;
+        }
+
+        .product:hover {
+            transform: scale(1.05);
+        }
+
+        .product img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .product-details {
+            padding: 15px;
+            text-align: center;
+        }
+
+        .product-details h3 {
+            font-size: 1.5rem;
+            margin: 10px 0;
+        }
+
+        .product-details p {
+            font-size: 1rem;
+            color: #555;
+            margin: 5px 0;
+        }
+
+        .product-details .price {
+            font-weight: bold;
+            color: #e74c3c;
+            margin: 10px 0;
+        }
+
+        .add-to-cart-btn {
+            background-color: #27ae60;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 1rem;
+            transition: background-color 0.3s;
+        }
+
+        .add-to-cart-btn:hover {
+            background-color: #2ecc71;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Product List</h1>
+        <div id="cart-icon" onclick="window.location.href='/cart.html'">
+            🛒
+            <span id="cart-count">0</span> <!-- This will display the cart count -->
+        </div>
+    </header>
+    
+    <div id="product-list"></div>
+
+    <script>
+        // Reset cart count to 0 when the page loads (clear localStorage cart count)
+        localStorage.setItem('cartCount', 0); // Reset the cart count to zero
+
+        // Update cart icon with the current cart count
+        function updateCartIcon() {
+            const cartCount = localStorage.getItem('cartCount');
+            document.getElementById('cart-count').textContent = cartCount;
+        }
+
+        // Function to fetch and display products
+        function loadProducts() {
+            fetch('/product-list')
+                .then(response => response.json())
+                .then(data => {
+                    const productList = document.getElementById('product-list');
+                    data.forEach(product => {
+                        const productDiv = document.createElement('div');
+                        productDiv.classList.add('product');
+                        productDiv.innerHTML = `
+                            <img src="${product.image}" alt="${product.name}">
+                            <div class="product-details">
+                                <h3>${product.name}</h3>
+                                <p>${product.description}</p>
+                                <p class="price">$${product.price}</p>
+                                <button class="add-to-cart-btn" onclick="addToCart(${product.id})">Add to Cart</button>
+                            </div>
+                        `;
+                        productList.appendChild(productDiv);
+                    });
+                })
+                .catch(error => console.error('Error loading products:', error));
+        }
+
+        // Function to add product to cart (default quantity is 1)
+        function addToCart(productId) {
+            fetch('/add-to-cart', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: productId, quantity: 1 }) // Default quantity set to 1
+            })
+            .then(response => response.json())
+            .then(data => {
+                // SweetAlert Popup
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Your cart item has been added',
+                    showConfirmButton: false,
+                    timer: 1500
+                });
+
+                // Update cart count
+                let cartCount = parseInt(localStorage.getItem('cartCount'));
+                cartCount += 1; // Increment the count
+                localStorage.setItem('cartCount', cartCount); // Save the new count to localStorage
+                updateCartIcon(); // Update the cart icon count
+            })
+            .catch(error => console.error('Error adding to cart:', error));
+        }
+
+        // Initial load
+        window.onload = function() {
+            loadProducts();
+            updateCartIcon(); // Update the cart icon on page load
+        }
+    </script>
+</body>
+</html>
