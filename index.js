@@ -4,21 +4,26 @@ const multer = require('multer');
 const path = require('path');
 const bodyParser = require('body-parser');
 const session = require('express-session');
+require('dotenv').config(); // 👈 Load .env variables
 
 const app = express();
 const port = 3000;
 
-// MySQL Connection Setup
+// MySQL Connection via .env (Clever Cloud)
 const db = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '',
-    database: 'shopping_cart_db'
-});
-
+    host: "bpiq9wp3873wyibgxtcp-mysql.services.clever-cloud.com",
+    user: "urph6ydqlay2wokw",
+    password: "cgSqmyMygUTcPwZycJOH",
+    database: "bpiq9wp3873wyibgxtcp",
+    port: 3306,
+    ssl: { rejectUnauthorized: false }, // SSL support (Clever Cloud requirement)
+  });
 db.connect((err) => {
-    if (err) throw err;
-    console.log('Connected to MySQL');
+    if (err) {
+        console.error('MySQL connection error:', err);
+        return;
+    }
+    console.log('✅ Connected to Clever Cloud MySQL');
 });
 
 // Multer Setup for Image Upload
@@ -143,9 +148,11 @@ app.post('/delete-product', (req, res) => {
         });
     });
 });
+
+// Route to update product with image
 app.post('/update-product', upload.single('image'), (req, res) => {
     const { id, name, description, price, quantity } = req.body;
-    const image = req.file ? `/uploads/${req.file.filename}` : null; // 👈 consistent path
+    const image = req.file ? `/uploads/${req.file.filename}` : null;
 
     if (!id || !name || !description || !price || !quantity) {
         return res.json({ success: false, message: "Missing required fields" });
@@ -169,32 +176,8 @@ app.post('/update-product', upload.single('image'), (req, res) => {
         res.json({ success: true, message: "Product updated successfully" });
     });
 });
-app.post('/update-product', (req, res) => {
-    const { id, name, description, price, quantity } = req.body;
-
-    // Ensure all required fields are provided
-    if (!id || !name || !description || !price || !quantity) {
-        return res.json({ success: false, message: "Missing required fields" });
-    }
-
-    // Update product query without image
-    const query = 'UPDATE products SET name=?, description=?, price=?, quantity=? WHERE id=?';
-    const values = [name, description, price, quantity, id];
-
-    db.query(query, values, (err, result) => {
-        if (err) {
-            console.error('DB Error:', err);
-            return res.json({ success: false, message: "Database update failed" });
-        }
-
-        res.json({ success: true, message: "Product updated successfully" });
-    });
-});
-
-
-
 
 // Server Setup
 app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`);
+    console.log(`🚀 Server running at http://localhost:${port}`);
 });
